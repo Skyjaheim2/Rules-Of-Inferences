@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"> -->
+    <link rel="stylesheet" href="https://bootswatch.com/4/yeti/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+  
+</head>
+<style>
+    #Heading {
+        color:black;
+        font-family: 'Times New Roman', Times, serif;
+        font-size: 35px;
+    }
+    #Premises {
+        /* position: absolute;
+        top: 50px; */
+        width: 500px;
+    }
+    #Premise_Form {
+        top: 40%;
+        right: 48%;
+        position: absolute;
+    }
+    .Form_Label {
+        font-family: 'Times New Roman', Times, serif;
+        font-weight: bold;
+        font-size: 20px;
+    }
+    #Go_Button {
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+        border-radius: 5px;
+        background-color: rgb(187, 27, 187);
+        /* background-color: green; */
+        width: 60px;
+        border: none;
+    }
+    #Symbol_Key_Heading {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        margin-left: 200px;
+        font-size: 20px;
+        font-weight: bold;
+    }
+    #Symbol_Keys {
+        margin-left: 200px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-size: 18px;
+    }
+    #Premises_Heading {
+        margin-left: 200px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    #User_Premises {
+        margin-left: 180px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-size: 18px;
+
+    }
+    .table_data {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-size: 18px;
+    }
+    ::placeholder {
+        font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    }
+    form {
+
+    }
+
+
+</style>
+<body>
+    <center>
+        <div id="Heading">Rules of Inferences</div>
+    </center>
+   
+    
+    <div id="Symbol_Key_Heading">Symbol Keys</div>
+    <br>
+    <div id="Symbol_Keys">
+        <ul>
+            <li>/wedge = ^</li>
+            <li>/vee = v</li>
+            <li>/arrow = →</li>
+            <li>/neg = ¬</li>
+        </ul>
+    </div>
+
+    
+
+    <div class="container">
+    <!-- FORM -->
+    <form id="Premise_Form" action="/solve" method="POST" onkeyup="replace_signs();">
+        <!-- PREMISES FORM -->
+        <div class="form-group">
+            <label class="Form_Label" for="Premises">Premises</label>
+            <input name="premises" id="Premises" class="form-control" placeholder="Enter Premises Separated By A Comma">
+        </div>
+        <!-- FINAL CONCLUSION FORM -->
+        <div class="form-group">
+            <label class="Form_Label" for="Final_conclusion">Final Conclusion</label>
+            <input name="final_conclusion" id="Final_conclusion" class="form-control">
+        </div>
+        
+        <button id="Go_Button" type="submit" class="btn btn-primary">Solve</button>
+    </form>
+
+
+
+</div>
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+   
+    <div id="Premises_Heading">Premises</div>
+    <br>
+    <div id="User_Premises">
+        <ol>
+            {% for item in premises %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ol>
+        <hr style="background-color:darkgray; margin-left: 0; width: 20%;">
+        ∴ {{ final_conclusion }}
+    </div>
+    <br>
+    <br>
+
+<center>
+    {% if error == True %}
+        <div class="alert alert-danger" style="width: 1000px; font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;">Unable To Solve</div>
+    {% endif %}
+    <table class="table table" style="width:70%;">
+        <thead class="thead-dark">
+            <tr>
+                <th>Steps</th>
+                <th>Proposition</th>
+                <th>Reason</th>
+            </tr>
+        </thead>
+
+
+        <!-- GET THE INDEX WHERE THE LOOP IS SUPPOSE TO END -->
+        {% if  check_index and error != True %}
+            {% if newConclusions[-1] != final_conclusion %}
+                {% set count = namespace(value=1) %}
+                {% for item in newConclusions %}
+                    {% if item != final_conclusion %}
+                        {% set count.value = count.value + 1 %}
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                {% set count =  newConclusions|length %}
+            {% endif %}
+        {% endif %}
+
+
+        <!-- MAIN LOOP -->
+        {% for item in newConclusions %}
+            {% if loop.index != count.value %}
+                
+                {% if item not in conclusions %}
+                    {% set reason = "Premise" %}
+                {% else %}
+                    {% set reason = conclusions[item] %}
+                {% endif %}
+
+                {% if reason != 'Premise' %}
+                    {% if 'and' not in reason %}
+                        <!-- {# <GO THE finalResult DICT AND LOOKUP WHERE TO FIND THE PREMISE #} -->
+                        {% set toFind = finalResult[reason[indexOf(reason, '('):]] %}
+                        {% set firstNameOfReason = reason.split()[0] %}
+                        {% set Reason = firstNameOfReason + ' on (' +  toFind|string + ')'  %}
+                        <!-- {# {% set Reason = f"{firstNameOfReason} on {'(' + str(toFind) + ')'}" %} #} -->
+                    {% else %}
+                        <!-- {# IF 'and' IS IN THE REASON SEPARATE THE TWO PREMISES THAT WERE USED #} -->
+                        {% set result = reason[indexOf(reason, '('):].split('and') %}
+                        <!-- {# GET THE FIRST POSITION OF THE FIRST PREMISE USED #} -->
+                        {% set firstLookUp  = finalResult[result[0].rstrip()] %}
+                        <!-- {# GET THE SECOND POSITION OF THE SECOND PREMISE USED #} -->
+                        {% set secondLookup =  finalResult[result[1].lstrip()] %}
+                        <!-- {# GET THE FIRST PART OF THE ORIGINAL REASON #} -->
+                        {% set temp_reason = reason.split(result[0]) %}
+
+                        {% set Reason = temp_reason[0].rstrip() + ' ('+firstLookUp|string + ') and' + ' (' + secondLookup|string +')'    %}
+
+                        <!-- {# {% set Reason = f'{temp_reason[0].rstrip()} ({firstLookUp}) and ({secondLookup})'%} #} -->
+                    {% endif %}
+
+                    
+                    <tbody>
+                        <tr>
+                            <td class="table_data" height="60px">{{ loop.index }}</td>
+                            <td class="table_data">{{ item }}</td>
+                            <td class="table_data">{{ Reason }}</td>
+                        </tr>
+                {% else %}
+                    <tr>
+                        <td class="table_data" height="60px">{{ loop.index }}</td>
+                        <td class="table_data">{{ item }}</td>
+                        <td class="table_data" width="500px">Premise</td>
+                    </tr>
+                    
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+
+        </tbody>
+    </table>
+</center>
+    
+</body>
+
+<script>
+    // REMOVE ALERT MESSAGE
+    setTimeout(() => document.querySelector('.alert').remove(), 3000);
+
+    premises_input = document.querySelector('#Premises').value;
+    final_conclusion_input = document.querySelector('#Final_conclusion').value;
+    solve_button = document.querySelector('#Go_Button');
+
+    if (premises_input == '' || final_conclusion_input == '') {
+        solve_button.disabled = true;
+    }
+
+
+    function replace_signs() {
+        CONJUNCTION = '^'
+        DISJUNCTION = 'v'
+        IMPLICATION = '→'
+        NEGATION    = '¬'
+        premises = document.querySelector('#Premises').value;
+        final_conclusion = document.querySelector('#Final_conclusion').value;
+
+        if (premises == '' || final_conclusion == '') {
+            solve_button.disabled = true;
+        }
+        else {
+            solve_button.disabled = false;
+        }
+        
+        new_premise = premises.replace('/neg', NEGATION).replace('/wedge', CONJUNCTION).replace('/vee', DISJUNCTION).replace('/arrow', IMPLICATION)
+
+        new_conclusion = final_conclusion.replace('/neg', NEGATION).replace('/wedge', CONJUNCTION).replace('/vee', DISJUNCTION).replace('/arrow', IMPLICATION)
+
+        document.querySelector('#Premises').value = new_premise
+        document.querySelector('#Final_conclusion').value = new_conclusion;
+        // console.log(new_premise)
+    }
+
+</script>
+</html>
