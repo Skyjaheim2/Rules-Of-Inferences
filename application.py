@@ -184,42 +184,55 @@ def rules_of_inferences(premises: list, finalConclusion, showSteps, premises_at_
 
 def Simplification(premise):
     if validSimplification(premise):
-        return [premise.split(CONJUNCTION)[0].strip().replace('(', '').replace(')', ''), premise.split(CONJUNCTION)[1].strip().replace('(', '').replace(')', '')]
+        if computeOccurences(premise, CONJUNCTION) == 1:
+            return [premise.split(CONJUNCTION)[0].strip().replace('(', '').replace(')', ''), premise.split(CONJUNCTION)[1].strip().replace('(', '').replace(')', '')]
+        else:
+            all_combinations = getAllConjunctions(premise)
+            return all_combinations
     else:
         return []
 def validSimplification(premise):
     if computeOccurences(premise, CONJUNCTION) == 1:
-        premise = premise.split(CONJUNCTION)
-        left_prop  = premise[0].strip()
-        right_prop = premise[1].strip()
-        isValid = True
-        # EVALUATE RIGHT PROP (RIGHT OF THE CONJUNCTION SIGN)
-        if is_single_proposition(right_prop):
-            if ')' in right_prop:
-                if '(' not in right_prop:
-                    isValid = False
-                else:
-                    isValid = True
+        if is_single_proposition(premise):
+            return True
         else:
-            isValid = False
-            return isValid
+            prop = premise.split(CONJUNCTION)
 
-        # EVALUATE LEFT PROP (LEFT IF TGE CONJUNCTION SIGN)
-        if is_single_proposition(left_prop):
-            if '(' in left_prop:
-                if ')' not in left_prop:
-                    num_of_open_paren_to_left    = computeOccurences(left_prop, '(')
-                    num_of_closed_paren_to_right =  computeOccurences(right_prop, ')')
-                    if num_of_closed_paren_to_right == (num_of_open_paren_to_left + 1):
-                        isValid = True
-                    else:
-                        isValid = False
-                else:
-                    isValid = True
-        else:
-            isValid = False
+            first_prop = prop[0].strip()
+            second_prop = prop[1].strip()
 
-        return isValid
+            return paren_is_balanced(first_prop) and paren_is_balanced(second_prop)
+        # premise = premise.split(CONJUNCTION)
+        # left_prop  = premise[0].strip()
+        # right_prop = premise[1].strip()
+        # isValid = True
+        # # EVALUATE RIGHT PROP (RIGHT OF THE CONJUNCTION SIGN)
+        # if is_single_proposition(right_prop):
+        #     if ')' in right_prop:
+        #         if '(' not in right_prop:
+        #             isValid = False
+        #         else:
+        #             isValid = True
+        # else:
+        #     isValid = False
+        #     return isValid
+        #
+        # # EVALUATE LEFT PROP (LEFT IF TGE CONJUNCTION SIGN)
+        # if is_single_proposition(left_prop):
+        #     if '(' in left_prop:
+        #         if ')' not in left_prop:
+        #             num_of_open_paren_to_left    = computeOccurences(left_prop, '(')
+        #             num_of_closed_paren_to_right =  computeOccurences(right_prop, ')')
+        #             if num_of_closed_paren_to_right == (num_of_open_paren_to_left + 1):
+        #                 isValid = True
+        #             else:
+        #                 isValid = False
+        #         else:
+        #             isValid = True
+        # else:
+        #     isValid = False
+        #
+        # return isValid
 
     else:
         # GET ALL SYMBOLS EXCEPT CONJUNCTION
@@ -232,6 +245,32 @@ def validSimplification(premise):
             if char in tempSymbols:
                 return False
         return True
+def getAllConjunctions(premise):
+    temp_premise = premise
+    premise = premise.replace('(', '').replace(')', '').split(CONJUNCTION)
+
+
+    for i, char in enumerate(temp_premise):
+        if char == CONJUNCTION:
+            left_prop  = temp_premise[:i].strip()
+            right_prop = temp_premise[i+1:].strip()
+            if paren_is_balanced(left_prop) and paren_is_balanced(right_prop):
+                stride_index = i
+
+
+
+    first_conjunction  = temp_premise[:stride_index-1].replace('(', '').replace(')', '') if is_single_proposition(temp_premise[:stride_index-1]) else temp_premise[:stride_index-1]
+    second_conjunction = temp_premise[stride_index+2:].replace('(', '').replace(')', '') if is_single_proposition(temp_premise[stride_index+2:]) else temp_premise[stride_index+2:]
+
+    all_combinations = [first_conjunction, second_conjunction]
+
+
+    for i in range(len(premise)):
+        for j in range(len(premise)):
+            if premise[i].strip() != premise[j].strip():
+                all_combinations.append(f'{premise[i].strip()} {CONJUNCTION} {premise[j].strip()}')
+
+    return removeDuplicates(all_combinations)
 
 def ModusPonens(impl_variables, premises):
     hypothesis = impl_variables[0].strip().replace('(', '').replace(')', '')
@@ -445,6 +484,16 @@ def indexOf(string, index_of):
     for i in range(len(string)):
         if string[i] == index_of:
             return i
+def paren_is_balanced(premise):
+    open_paren   = ['(', '[', '{']
+    closed_paren = [')', ']', '}']
+
+
+    open_paren_in_str = [item for item in premise if item in open_paren]
+    closed_paren_in_string = [item for item in premise if item in closed_paren]
+
+
+    return len(open_paren_in_str) == len(closed_paren_in_string)
 def computeOccurences(string: str, occurence):
     index = 0
     for char in string:
