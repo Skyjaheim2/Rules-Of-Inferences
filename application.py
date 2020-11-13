@@ -83,29 +83,37 @@ def rules_of_inferences(premises: list, finalConclusion, showSteps, premises_at_
         string_of_premises += premise
         # CHECK FOR SIMPLIFICATION
         if CONJUNCTION in premise:
-            for item in Simplification(premise):
-                if item not in premises_at_first_run_time:
-                    conclusions.update({item: f'Simplification on ({premise})'})
+            if len(Simplification(premise)) <= len(premise.split(CONJUNCTION)):
+                for item in Simplification(premise):
+                    if item not in premises_at_first_run_time:
+                        conclusions.update({item: f'Simplification on ({premise})'})
+            else:
+                for item in Simplification(premise):
+                    if item not in premises_at_first_run_time and item in string_of_premises or item in finalConclusion:
+                        conclusions.update({item: f'Simplification on ({premise})'})
 
-        #CHECK FOR CONJUNCTION
+        # CHECK FOR CONJUNCTION
         if is_single_proposition(premise):
             single_premises.append(premise)
         if len(single_premises) >= 2:
             for item in Conjunction(single_premises):
-                if item in string_of_premises and item not in conclusions and item not in premises_at_first_run_time and is_single_proposition(item):
-                    conclusions.update({item: f"Conjunction on ({item.split(CONJUNCTION)[0].replace(' ', '')}) and ({item.split(CONJUNCTION)[1].replace(' ', '')})"})
-
+                if item in string_of_premises and item not in conclusions and item not in premises_at_first_run_time and is_single_proposition(
+                        item):
+                    conclusions.update({
+                                           item: f"Conjunction on ({item.split(CONJUNCTION)[0].replace(' ', '')}) and ({item.split(CONJUNCTION)[1].replace(' ', '')})"})
 
         if IMPLICATION in premise:
-            implication_variables = premise.split(IMPLICATION) if len(premise.split(IMPLICATION)) == 2 else splitCompoundImplication(premise)
+            implication_variables = premise.split(IMPLICATION) if len(
+                premise.split(IMPLICATION)) == 2 else splitCompoundImplication(premise)
             # CHECK FOR MODUS PONENS
             tempMP = ModusPonens(implication_variables, premises)
-            for item in ModusPonens(implication_variables, premises):
+            for item in tempMP:
                 conclusions.update({item: f'Modus Pones on ({premise}) and ({tempMP[item]})'})
             # CHECK FOR HYPOTHETICAL SYLLOGISM
-            for item in HypotheticalSyllogism(implication_variables, premise, premises):
-                tempHS = HypotheticalSyllogism(implication_variables, premise, premises)
-                conclusions.update({f'{item}': f"Hypothetical Syllogism on ({tempHS[item][0]}) and ({tempHS[item][1]})"})
+            tempHS = HypotheticalSyllogism(implication_variables, premise, premises)
+            for item in tempHS:
+                conclusions.update(
+                    {f'{item}': f"Hypothetical Syllogism on ({tempHS[item][0]}) and ({tempHS[item][1]})"})
             # DO IMPLICATION LAW
             tempIL = ImplicationLaw(premise)
             for item in tempIL:
@@ -117,7 +125,7 @@ def rules_of_inferences(premises: list, finalConclusion, showSteps, premises_at_
             # CHECK FOR MODUS TOLLENS
             if is_single_proposition(premise):
                 tempMT = ModusTollens(negated_variable, premises)
-                for item in ModusTollens(negated_variable, premises):
+                for item in tempMT:
                     conclusions.update({item: f"Modus Tollens on ({premise}) and ({tempMT[item]})"})
             # CHECK FOR IMPLICATION
             if DISJUNCTION in premise:
@@ -134,16 +142,15 @@ def rules_of_inferences(premises: list, finalConclusion, showSteps, premises_at_
                 for item in tempDN:
                     conclusions.update({item: f"Double-Negation on ({tempDN[item]})"})
 
-
         if DISJUNCTION in premise:
             # CHECK FOR DISJUNCTIVE SYLLOGISM
             if is_single_proposition(premise):
                 tempDS = DisjunctiveSyllogism(premise, premises)
-                for item in DisjunctiveSyllogism(premise, premises):
+                for item in tempDS:
                     conclusions.update({item: f"Disjunctive Syllogism on ({premise}) and ({tempDS[item]})"})
             # CHECK FOR RESOLUTION
             tempR = Resolution(premise, premises)
-            for item in Resolution(premise, premises):
+            for item in tempR:
                 conclusions.update({item: f"Resolution on ({tempR[item][0]}) and ({tempR[item][1]})"})
 
     for conclusion in conclusions:
