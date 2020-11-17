@@ -55,7 +55,7 @@ def solve():
 
     temp = [item for item in Premises]
 
-    tempRules = rules_of_inferences(Premises, final_conclusion, False, temp)
+    tempRules = rules_of_inferences(Premises, final_conclusion, temp)
 
     if not tempRules:
         return render_template('index.html', premises=temp, final_conclusion=final_conclusion, error=True)
@@ -72,15 +72,17 @@ def solve():
 
 MAX_RUN_TIME = 50
 run_time = 0
-def rules_of_inferences(premises: list, finalConclusion, showSteps, premises_at_first_run_time):
+def rules_of_inferences(premises: list, finalConclusion, premises_at_first_run_time):
     global run_time
     conclusions = {}
     single_premises = []
     string_of_premises = ""
+    for prem in premises:
+        string_of_premises += prem
 
     for i, premise in enumerate(premises):
 
-        string_of_premises += premise
+        # string_of_premises += premise
         # CHECK FOR SIMPLIFICATION
         if CONJUNCTION in premise:
             if len(Simplification(premise)) <= len(premise.split(CONJUNCTION)):
@@ -103,8 +105,7 @@ def rules_of_inferences(premises: list, finalConclusion, showSteps, premises_at_
                                            item: f"Conjunction on ({item.split(CONJUNCTION)[0].replace(' ', '')}) and ({item.split(CONJUNCTION)[1].replace(' ', '')})"})
 
         if IMPLICATION in premise:
-            implication_variables = premise.split(IMPLICATION) if len(
-                premise.split(IMPLICATION)) == 2 else splitCompoundImplication(premise)
+            implication_variables = premise.split(IMPLICATION) if len(premise.split(IMPLICATION)) == 2 else splitCompoundImplication(premise)
             # CHECK FOR MODUS PONENS
             tempMP = ModusPonens(implication_variables, premises)
             for item in tempMP:
@@ -119,6 +120,10 @@ def rules_of_inferences(premises: list, finalConclusion, showSteps, premises_at_
             for item in tempIL:
                 if item in string_of_premises or item == finalConclusion:
                     conclusions.update({item: f"Implication-Law on ({tempIL[item]})"})
+            # DO CONTRAPOSITIVE
+            tempCP = Contrapositive(implication_variables)
+            if (tempCP in string_of_premises and tempCP not in premises_at_first_run_time) or tempCP in finalConclusion:
+                conclusions.update({tempCP: f"Contrapositive on ({tempCP})"})
 
         if NEGATION in premise:
             negated_variable = premise
@@ -172,7 +177,7 @@ def rules_of_inferences(premises: list, finalConclusion, showSteps, premises_at_
 
         if run_time < MAX_RUN_TIME:
             run_time += 1
-            return rules_of_inferences(newConclusions, finalConclusion, showSteps, premises_at_first_run_time)
+            return rules_of_inferences(newConclusions, finalConclusion, premises_at_first_run_time)
 
         return False
 
@@ -185,7 +190,9 @@ def rules_of_inferences(premises: list, finalConclusion, showSteps, premises_at_
 def Simplification(premise):
     if validSimplification(premise):
         if computeOccurences(premise, CONJUNCTION) == 1:
-            return [premise.split(CONJUNCTION)[0].strip().replace('(', '').replace(')', ''), premise.split(CONJUNCTION)[1].strip().replace('(', '').replace(')', '')]
+            first_conjunction = premise.split(CONJUNCTION)[0].strip()
+            second_conjunction =  premise.split(CONJUNCTION)[1].strip()
+            return [remove_paren(first_conjunction) if is_single_proposition(first_conjunction) else first_conjunction, remove_paren(second_conjunction) if is_single_proposition(second_conjunction) else second_conjunction]
         else:
             all_combinations = getAllConjunctions(premise)
             return all_combinations
@@ -202,37 +209,6 @@ def validSimplification(premise):
             second_prop = prop[1].strip()
 
             return paren_is_balanced(first_prop) and paren_is_balanced(second_prop)
-        # premise = premise.split(CONJUNCTION)
-        # left_prop  = premise[0].strip()
-        # right_prop = premise[1].strip()
-        # isValid = True
-        # # EVALUATE RIGHT PROP (RIGHT OF THE CONJUNCTION SIGN)
-        # if is_single_proposition(right_prop):
-        #     if ')' in right_prop:
-        #         if '(' not in right_prop:
-        #             isValid = False
-        #         else:
-        #             isValid = True
-        # else:
-        #     isValid = False
-        #     return isValid
-        #
-        # # EVALUATE LEFT PROP (LEFT IF TGE CONJUNCTION SIGN)
-        # if is_single_proposition(left_prop):
-        #     if '(' in left_prop:
-        #         if ')' not in left_prop:
-        #             num_of_open_paren_to_left    = computeOccurences(left_prop, '(')
-        #             num_of_closed_paren_to_right =  computeOccurences(right_prop, ')')
-        #             if num_of_closed_paren_to_right == (num_of_open_paren_to_left + 1):
-        #                 isValid = True
-        #             else:
-        #                 isValid = False
-        #         else:
-        #             isValid = True
-        # else:
-        #     isValid = False
-        #
-        # return isValid
 
     else:
         # GET ALL SYMBOLS EXCEPT CONJUNCTION
@@ -455,15 +431,18 @@ def switchConclusions(conclusion):
             return None
     return None
 def splitCompoundImplication(premise):
-    index_of_first_implication = 0
-    for char in premise:
+    implication_occurrences = 0
+    for i, char in enumerate(premise):
         if char == IMPLICATION:
-            break
-        index_of_first_implication += 1
-    hypothesis = premise[:index_of_first_implication].strip()
-    consequent = premise[index_of_first_implication+1:].strip()
+            implication_occurrences += 1
+            left_prop = premise[:indexOf(premise, IMPLICATION, implication_occurrences)-1]
+            right_prop = premise[indexOf(premise, IMPLICATION, implication_occurrences)+2:]
+            if is_single_proposition(left_prop) and is_single_proposition(right_prop):
+                return [left_prop, right_prop]
 
-    return [hypothesis, consequent]
+    return []
+
+
 
 def removeDuplicates(array):
     found_items = []
@@ -480,7 +459,15 @@ def is_single_proposition(premise):
             count += 1
 
     return count <= 1
-def indexOf(string, index_of):
+def indexOf(string, index_of, specific_index=None):
+    if specific_index != None:
+        all_occurrences = []
+
+        for i in range(len(string)):
+            if string[i] == index_of:
+                all_occurrences.append(i)
+
+        return all_occurrences[specific_index - 1] if len(all_occurrences) != 0 else None
     for i in range(len(string)):
         if string[i] == index_of:
             return i
@@ -494,6 +481,9 @@ def paren_is_balanced(premise):
 
 
     return len(open_paren_in_str) == len(closed_paren_in_string)
+
+def remove_paren(string):
+    return string.replace('(', '').replace(')', '')
 def computeOccurences(string: str, occurence):
     index = 0
     for char in string:

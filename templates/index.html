@@ -71,6 +71,7 @@
     }
     form {
 
+
     }
 
 
@@ -237,9 +238,6 @@
     final_conclusion_input = document.querySelector('#Final_conclusion').value;
     solve_button = document.querySelector('#Go_Button');
 
-    if (premises_input == '' || final_conclusion_input == '') {
-        solve_button.disabled = true;
-    }
 
 
     function replace_signs() {
@@ -248,9 +246,26 @@
         IMPLICATION = '→'
         NEGATION    = '¬'
         premises = document.querySelector('#Premises').value;
+        premises_input = document.querySelector('#Premises');
         final_conclusion = document.querySelector('#Final_conclusion').value;
+        final_conclusion_input = document.querySelector('#Final_conclusion');
 
-        if (premises == '' || final_conclusion == '') {
+        // CHANGE PREMISES INPUT COLOR
+        if (!paren_is_balanced(premises)) {
+            premises_input.style.borderColor = "red";
+        }
+        else {
+            premises_input.style.borderColor = "lightgray";
+        }
+        // CHANGE FINAL CONCLUSION INPUT COLOR
+        if (!paren_is_balanced(final_conclusion)) {
+            final_conclusion_input.style.borderColor = "red";
+        }
+        else {
+            final_conclusion_input.style.borderColor = "lightgray";
+        }
+
+        if (premises == '' || final_conclusion == '' || !paren_is_balanced(premises) || !paren_is_balanced(final_conclusion)) {
             solve_button.disabled = true;
         }
         else {
@@ -263,8 +278,32 @@
 
         document.querySelector('#Premises').value = new_premise
         document.querySelector('#Final_conclusion').value = new_conclusion;
-        // console.log(new_premise)
+
+    
     }
+
+    function paren_is_balanced(string) {
+        open_paren = '('
+        closed_paren = ')'
+
+        open_paren_in_str = [];
+        closed_paren_in_string = []
+
+       for (let i = 0; i < string.length; i += 1) {
+           if (string[i] == open_paren) {
+               open_paren_in_str.push(string[i]);
+           }
+           if (string[i] == closed_paren) {
+               closed_paren_in_string.push(string[i]);
+           }
+       }
+
+       return open_paren_in_str.length == closed_paren_in_string.length
+
+
+
+    }
+
 
 </script>
 </html>
